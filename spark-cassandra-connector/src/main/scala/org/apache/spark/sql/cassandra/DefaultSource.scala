@@ -39,9 +39,9 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
    * The parameters map stores table level data. User can specify vale for following keys
    *
    *    table        -- table name, required
-   *    keyspace       -- keyspace name, required
-   *    cluster        -- cluster name, optional, default name is "default"
-   *    pushdown      -- true/false, optional, default is true
+   *    keyspace     -- keyspace name, required
+   *    cluster      -- cluster name, optional, default name is "default"
+   *    pushdown     -- true/false, optional, default is true
    *    Cassandra connection settings  -- optional, e.g. spark_cassandra_connection_timeout_ms
    *    Cassandra Read Settings        -- optional, e.g. spark_cassandra_input_page_row_size
    *    Cassandra Write settings       -- optional, e.g. spark_cassandra_output_consistency_level

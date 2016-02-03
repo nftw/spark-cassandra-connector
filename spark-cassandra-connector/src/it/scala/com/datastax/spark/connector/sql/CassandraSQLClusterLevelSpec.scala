@@ -3,9 +3,11 @@ package com.datastax.spark.connector.sql
 import scala.concurrent.Future
 
 import com.datastax.spark.connector.SparkCassandraITFlatSpecBase
-import com.datastax.spark.connector.cql.CassandraConnector
+import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector}
 import com.datastax.spark.connector.embedded.EmbeddedCassandra._
-import org.apache.spark.sql.cassandra.CassandraSQLContext
+import org.apache.spark.sql.cassandra._
+
+import com.datastax.spark.connector.rdd.ReadConf
 
 class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
   useCassandraConfig(Seq("cassandra-default.yaml.template", "cassandra-default.yaml.template"))
@@ -64,14 +66,20 @@ class CassandraSQLClusterLevelSpec extends SparkCassandraITFlatSpecBase {
     cc.setConf("cluster2/spark.cassandra.connection.port", getPort(1).toString)
   }
 
-  ignore should "allow to join tables from different clusters" in {
-    val result = cc.sql(s"SELECT * FROM cluster1.$ks.test1 AS test1 Join cluster2.$ks.test2 AS test2 where test1.a=test2.a").collect()
+  it should "allow to join tables from different clusters" in {
+    cc.read.cassandraFormat("test1", ks, "cluster1").load().registerTempTable("c1_test1")
+    cc.read.cassandraFormat("test2", ks, "cluster2").load().registerTempTable("c2_test2")
+
+    val result = cc.sql(s"SELECT * FROM c1_test1 AS test1 JOIN c2_test2 AS test2 WHERE test1.a = test2.a").collect()
     result should have length 2
   }
 
-  ignore should "allow to write data to another cluster" in {
-    val insert = cc.sql(s"INSERT INTO TABLE cluster2.$ks.test3 SELECT * FROM cluster1.$ks.test1 AS t1").collect()
-    val result = cc.sql(s"SELECT * FROM cluster2.$ks.test3 AS test3").collect()
+  it should "allow to write data to another cluster" in {
+    cc.read.cassandraFormat("test1", ks, "cluster1").load().registerTempTable("c1_test1")
+    cc.read.cassandraFormat("test3", ks, "cluster2").load().registerTempTable("c2_test3")
+
+    val insert = cc.sql(s"INSERT INTO TABLE c2_test3 SELECT * FROM c1_test1 AS t1").collect()
+    val result = cc.sql(s"SELECT * FROM c2_test3 AS test3").collect()
     result should have length 5
   }
 }

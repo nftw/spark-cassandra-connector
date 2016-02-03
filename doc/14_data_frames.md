@@ -89,6 +89,43 @@ cat  30
 fox  40
 ```
 
+There are also some helper methods which can make creating data frames easier. They can be accessed after importing 
+`org.apache.spark.sql.cassandra` package. In the following example, all the commands used to create a data frame are 
+equivalent:
+
+```scala
+import org.apache.spark.sql.cassandra._
+
+val df1 = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map("table" -> "words", "keyspace" -> "test", "cluster" -> "cluster_A"))
+  .load()
+
+val df2 = sqlContext
+  .read
+  .format(CassandraFormat)
+  .options(Map("table" -> "words", "keyspace" -> "test", "cluster" -> "cluster_A"))
+  .load()
+
+val df3 = sqlContext
+  .read
+  .cassandraFormat
+  .options(Map("table" -> "words", "keyspace" -> "test", "cluster" -> "cluster_A"))
+  .load()
+
+val df4 = sqlContext
+  .read
+  .cassandraFormat
+  .options(cassandraOptions("words", "test", "cluster_A"))
+  .load()
+
+val df5 = sqlContext
+  .read
+  .cassandraFormat("words", "test", "cluster_A")
+  .load()
+```
+
 ###Creating DataFrames using Spark SQL
 
 Accessing data Frames using Spark SQL involves creating temporary tables and specifying the
@@ -153,6 +190,60 @@ df.write
   .format("org.apache.spark.sql.cassandra")
   .options(Map( "table" -> "words_copy", "keyspace" -> "test"))
   .save()
+```
+
+Similarly to reading Cassandra tables into data frames, we have some helper methods for the write path which are 
+provided by `org.apache.spark.sql.cassandra` package. In the following example, all the commands are equivalent:
+```scala
+import org.apache.spark.sql.cassandra._
+
+df.write
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map("table" -> "words_copy", "keyspace" -> "test", "cluster" -> "cluster_B"))
+  .save()
+
+df.write
+  .format(CassandraFormat)
+  .options(Map("table" -> "words_copy", "keyspace" -> "test", "cluster" -> "cluster_B"))
+  .save()
+
+df.write
+  .cassandraFormat
+  .options(Map("table" -> "words_copy", "keyspace" -> "test", "cluster" -> "cluster_B"))
+  .save()
+
+df.write
+  .cassandraFormat
+  .options(cassandraOptions("words_copy", "test", "cluster_B"))
+  .save()
+
+df.write
+  .cassandraFormat("words_copy", "test", "cluster_B")
+  .save()
+
+```
+
+###Setting Connector specific options on data frames
+Connector specific options can be set by invoking `options` method on either `DataFrameReader` or `DataFrameWriter`. 
+There a lof of settings you may want to change in `ReadConf`, `WriteConf`, `CassandraConnectorConf`, `AuthConf` and
+others. Those settings are identified by instances of `ConfigParameter` case class which offers an easy way to apply 
+the option which it represents to a `DataFrameReader` or `DataFrameWriter`. 
+
+Suppose we want to set `spark.cassandra.read.timeout_ms` to 7 seconds on some `DataFrameReader`, we can do this both 
+ways:
+```scala
+option("spark_cassandra_read_timeout_ms", "7000")
+```
+Since this setting is represented by `CassandraConnectorConf.ReadTimeoutParam` we can simply do:
+```scala
+options(CassandraConnectorConf.ReadTimeoutParam("7000"))
+```
+
+Each parameter, that is, each instance of `ConfigParameter` allows to invoke `apply` method with a single parameter. 
+That method returns a `Map[String, String]` (note that you need to use `options` instead of `option`) so setting 
+multiple parameters can be chained:
+```scala
+options(CassandraConnectorConf.ReadTimeoutParam("7000") ++ ReadConf.TaskMetricParam(true))
 ```
 
 ###Creating a New Cassandra Table From a DataFrame Schema
