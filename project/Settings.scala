@@ -259,6 +259,7 @@ object Settings extends Build {
     def multiCInstanceGroupingFunction(test: TestDefinition): String = {
       if (test.name.toLowerCase.contains("auth")) "auth"
       else if (test.name.toLowerCase.contains("ssl")) "ssl"
+      else if (test.name.contains("CustomFromDriverSpec")) "customdriverspec"
       else test.name.reverse.dropWhile(_ != '.').reverse
     }
 
@@ -321,10 +322,6 @@ object Settings extends Build {
       TEST_ENV = Some(env)
       env
     }
-  )
-
-  lazy val japiSettings = Seq(
-    publishArtifact := true
   )
 
   lazy val kafkaDemoSettings = Seq(
